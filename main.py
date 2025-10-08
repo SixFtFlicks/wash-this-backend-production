@@ -141,28 +141,31 @@ Provide specific recommendations:
 Be specific about what you observe in the images."""
 
 def analyze_with_gemini(images: List[str], analysis_type: str, user_notes: Optional[str] = None) -> Dict[str, Any]:
-    """Enhanced analysis using Google Gemini Vision"""
+    """Enhanced analysis using Google Gemini Vision with debug logging"""
     
-    # Try Emergent LLM Key first (supports Gemini)
+    # Try Emergent LLM Key first
     EMERGENT_LLM_KEY = os.getenv("EMERGENT_LLM_KEY")
     GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY")
     
-    api_key = EMERGENT_LLM_KEY or GOOGLE_API_KEY
+    print(f"DEBUG: Emergent key exists: {bool(EMERGENT_LLM_KEY)}")
+    print(f"DEBUG: Google key exists: {bool(GOOGLE_API_KEY)}")
     
-    if not api_key:
-        print("WARNING: No Gemini/Google API key found, using enhanced fallback response")
-        return get_enhanced_fallback_response(analysis_type)
-    
-    try:
-        # Use Emergent LLM endpoint if available, otherwise Google directly
-        if EMERGENT_LLM_KEY:
+    if EMERGENT_LLM_KEY:
+        print("DEBUG: Trying Emergent LLM key...")
+        try:
             return analyze_with_emergent_gemini(images, analysis_type, user_notes, EMERGENT_LLM_KEY)
-        else:
+        except Exception as e:
+            print(f"DEBUG: Emergent failed: {str(e)}")
+    
+    if GOOGLE_API_KEY:
+        print("DEBUG: Trying Google API key...")
+        try:
             return analyze_with_google_gemini(images, analysis_type, user_notes, GOOGLE_API_KEY)
-            
-    except Exception as e:
-        print(f"Gemini analysis error: {str(e)}")
-        return get_enhanced_fallback_response(analysis_type)
+        except Exception as e:
+            print(f"DEBUG: Google failed: {str(e)}")
+    
+    print("DEBUG: No API keys available, using fallback")
+    return get_enhanced_fallback_response(analysis_type)
 
 def analyze_with_emergent_gemini(images: List[str], analysis_type: str, user_notes: Optional[str], api_key: str) -> Dict[str, Any]:
     """Analysis using Emergent LLM key with Gemini"""
